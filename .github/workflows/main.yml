@@ -1,0 +1,55 @@
+name: terraform-helm-example
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  tflint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Cache plugin dir
+        uses: actions/cache@v2
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v1
+        with:
+          tflint_version: v0.29.0
+
+      - name: Show version
+        run: tflint --version
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Run TFLint
+        run: tflint -f compact
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.0.0
+
+      - name: Terraform format
+        id: fmt
+        run: terraform fmt -check
+
+      - name: Terraform init
+        id: init
+        run: terraform init
+
+      - name: Terraform validate
+        id: validate
+        run: terraform validate
